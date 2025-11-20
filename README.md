@@ -7,7 +7,7 @@ ZKE method
 
 This repository contains the client-side encryption code that powers FileShot.io's zero-knowledge encryption feature. Files are encrypted entirely in your browser before upload, ensuring that even FileShot's servers cannot decrypt your files.
 
-## 🔒 What is Zero-Knowledge Encryption?
+What is Zero-Knowledge Encryption?
 
 Zero-knowledge encryption means that **we cannot decrypt your files**, even if we wanted to. The encryption happens entirely in your browser using the Web Crypto API, and we never receive your encryption key or password.
 
@@ -19,7 +19,7 @@ Zero-knowledge encryption means that **we cannot decrypt your files**, even if w
 - ✅ **No server access** - We cannot decrypt your files, even with a court order
 - ✅ **Open source** - Review the code yourself
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Try the Demo
 
@@ -52,7 +52,7 @@ Zero-knowledge encryption means that **we cannot decrypt your files**, even if w
 </script>
 ```
 
-## 📖 How It Works
+##  How It Works
 
 1. **Key Generation**: Your browser generates a random salt and derives an encryption key from your password using PBKDF2
 2. **Encryption**: Your file is encrypted using AES-256-GCM before upload
@@ -60,7 +60,7 @@ Zero-knowledge encryption means that **we cannot decrypt your files**, even if w
 4. **Storage**: We store encrypted blobs that we cannot decrypt
 5. **Download**: Recipients decrypt files in their browser using the password you shared
 
-## 🔐 Security Details
+##  Security Details
 
 - **Algorithm**: AES-256-GCM (Galois/Counter Mode)
 - **Key Derivation**: PBKDF2 with SHA-256
@@ -69,7 +69,7 @@ Zero-knowledge encryption means that **we cannot decrypt your files**, even if w
 - **IV Length**: 12 bytes (96 bits) for GCM
 - **Key Length**: 256 bits
 
-## 📁 File Structure
+##  File Structure
 
 ```
 fileshot-zke/
@@ -79,7 +79,7 @@ fileshot-zke/
 └── LICENSE             # MIT License
 ```
 
-## 🧪 Testing
+##  Testing
 
 Open `demo.html` in a modern browser to test the encryption implementation. The demo allows you to:
 
@@ -88,7 +88,7 @@ Open `demo.html` in a modern browser to test the encryption implementation. The 
 - Decrypt files with the correct password
 - Verify that incorrect passwords fail
 
-## 📝 API Reference
+##  API Reference
 
 ### `zeroKnowledgeEncrypt(file, password)`
 
@@ -123,7 +123,7 @@ Decrypts a file in the browser.
 
 **Returns:** Promise resolving to a Blob containing the decrypted file.
 
-## ⚠️ Important Security Notes
+##  Important Security Notes
 
 1. **Password Strength**: Use a strong, unique password for each file
 2. **Password Sharing**: Share passwords through a secure channel (not via FileShot)
@@ -131,7 +131,7 @@ Decrypts a file in the browser.
 4. **Browser Security**: Ensure your browser and system are secure and up-to-date
 5. **HTTPS Only**: Only use this on HTTPS connections in production
 
-## 🔍 Verification
+##  Verification
 
 This code is used by FileShot.io. You can verify:
 
@@ -139,11 +139,11 @@ This code is used by FileShot.io. You can verify:
 2. Encryption happens client-side (check Network tab in DevTools)
 3. The encryption key never leaves your browser
 
-## 📄 License
+##  License
 
 MIT License - See [LICENSE](LICENSE) file for details.
 
-## 🤝 Contributing
+##  Contributing
 
 We welcome security reviews and improvements! Please:
 
@@ -152,7 +152,7 @@ We welcome security reviews and improvements! Please:
 3. Submit issues or pull requests
 4. Report security vulnerabilities responsibly
 
-## 🔒 Security Policy
+##  Security Policy
 
 If you discover a security vulnerability, please email **fileshot.adm@gmail.como** instead of opening a public issue.
 
