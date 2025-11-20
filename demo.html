@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FileShot Zero-Knowledge Encryption Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem;
+            color: #333;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1rem;
+        }
+
+        .content {
+            padding: 2rem;
+        }
+
+        .section {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: #f8f9fa;
+            border-radius: 0.5rem;
+            border: 1px solid #e9ecef;
+        }
+
+        .section h2 {
+            font-size: 1.25rem;
+            margin-bottom: 1rem;
+            color: #667eea;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .file-input-wrapper input[type="file"] {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .file-input-label {
+            display: block;
+            padding: 1rem;
+            background: white;
+            border: 2px dashed #667eea;
+            border-radius: 0.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .file-input-label:hover {
+            background: #f0f4ff;
+            border-color: #764ba2;
+        }
+
+        .file-info {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: white;
+            border-radius: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .file-info strong {
+            color: #667eea;
+        }
+
+        input[type="password"],
+        input[type="text"] {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            width: 100%;
+            margin-bottom: 0.5rem;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .status {
+            margin-top: 1rem;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .download-link {
+            display: inline-block;
+            margin-top: 1rem;
+            padding: 0.75rem 1.5rem;
+            background: #28a745;
+            color: white;
+            text-decoration: none;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+
+        .download-link:hover {
+            background: #218838;
+        }
+
+        .step-number {
+            display: inline-block;
+            width: 2rem;
+            height: 2rem;
+            line-height: 2rem;
+            background: #667eea;
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            font-weight: bold;
+            margin-right: 0.5rem;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 1.5rem;
+            background: #f8f9fa;
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+
+        .footer a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔒 Zero-Knowledge Encryption Demo</h1>
+            <p>Test FileShot's client-side encryption implementation</p>
+        </div>
+
+        <div class="content">
+            <!-- Encryption Section -->
+            <div class="section">
+                <h2><span class="step-number">1</span>Encrypt a File</h2>
+                <div class="file-input-wrapper">
+                    <input type="file" id="fileInput" />
+                    <label for="fileInput" class="file-input-label">
+                        📁 Click to select a file
+                    </label>
+                </div>
+                <div id="fileInfo" class="file-info hidden"></div>
+                <input type="password" id="encryptPassword" placeholder="Enter encryption password (min 4 characters)" />
+                <button id="encryptBtn" onclick="encryptFile()" disabled>🔐 Encrypt File</button>
+                <div id="encryptStatus"></div>
+                <a id="downloadEncrypted" class="download-link hidden" download="encrypted-file.bin">⬇️ Download Encrypted File</a>
+            </div>
+
+            <!-- Decryption Section -->
+            <div class="section">
+                <h2><span class="step-number">2</span>Decrypt a File</h2>
+                <div class="file-input-wrapper">
+                    <input type="file" id="encryptedFileInput" accept=".bin,application/octet-stream" />
+                    <label for="encryptedFileInput" class="file-input-label">
+                        📁 Click to select encrypted file
+                    </label>
+                </div>
+                <input type="text" id="originalFileName" placeholder="Original filename (e.g., document.pdf)" />
+                <input type="text" id="originalFileType" placeholder="Original file type (e.g., application/pdf)" />
+                <input type="password" id="decryptPassword" placeholder="Enter decryption password" />
+                <button id="decryptBtn" onclick="decryptFile()" disabled>🔓 Decrypt File</button>
+                <div id="decryptStatus"></div>
+                <a id="downloadDecrypted" class="download-link hidden" download>⬇️ Download Decrypted File</a>
+            </div>
+
+            <!-- Info Section -->
+            <div class="section">
+                <h2>ℹ️ How It Works</h2>
+                <ul style="line-height: 1.8; padding-left: 1.5rem;">
+                    <li>Files are encrypted <strong>entirely in your browser</strong> using Web Crypto API</li>
+                    <li>Uses <strong>AES-256-GCM</strong> encryption with <strong>PBKDF2</strong> key derivation</li>
+                    <li>The encryption password <strong>never leaves your browser</strong></li>
+                    <li>Even FileShot's servers <strong>cannot decrypt</strong> your files</li>
+                    <li>Each file uses a unique random salt and IV for maximum security</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>This is the encryption implementation used by <a href="https://fileshot.io" target="_blank">FileShot.io</a></p>
+            <p>View source code on <a href="https://github.com" target="_blank">GitHub</a></p>
+        </div>
+    </div>
+
+    <script src="zero-knowledge.js"></script>
+    <script>
+        let encryptedBlob = null;
+        let encryptedMetadata = null;
+
+        // File input handlers
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const fileInfo = document.getElementById('fileInfo');
+                fileInfo.classList.remove('hidden');
+                fileInfo.innerHTML = `
+                    <strong>Selected:</strong> ${file.name}<br>
+                    <strong>Size:</strong> ${(file.size / 1024).toFixed(2)} KB<br>
+                    <strong>Type:</strong> ${file.type || 'Unknown'}
+                `;
+                document.getElementById('encryptBtn').disabled = false;
+            }
+        });
+
+        document.getElementById('encryptedFileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                document.getElementById('decryptBtn').disabled = false;
+            }
+        });
+
+        async function encryptFile() {
+            const fileInput = document.getElementById('fileInput');
+            const passwordInput = document.getElementById('encryptPassword');
+            const statusDiv = document.getElementById('encryptStatus');
+            const downloadLink = document.getElementById('downloadEncrypted');
+            const encryptBtn = document.getElementById('encryptBtn');
+
+            if (!fileInput.files[0]) {
+                showStatus(statusDiv, 'Please select a file first.', 'error');
+                return;
+            }
+
+            const password = passwordInput.value;
+            if (!password || password.length < 4) {
+                showStatus(statusDiv, 'Password must be at least 4 characters long.', 'error');
+                return;
+            }
+
+            try {
+                encryptBtn.disabled = true;
+                encryptBtn.textContent = '⏳ Encrypting...';
+                showStatus(statusDiv, 'Encrypting file...', 'info');
+
+                const file = fileInput.files[0];
+                const result = await window.zeroKnowledgeEncrypt(file, password);
+
+                encryptedBlob = result.encryptedBlob;
+                encryptedMetadata = result.metadata;
+
+                // Create download link
+                const url = URL.createObjectURL(encryptedBlob);
+                downloadLink.href = url;
+                downloadLink.download = 'encrypted-file.bin';
+                downloadLink.classList.remove('hidden');
+
+                showStatus(statusDiv, 
+                    `✅ File encrypted successfully!<br>
+                    <strong>Original size:</strong> ${(result.metadata.originalSize / 1024).toFixed(2)} KB<br>
+                    <strong>Encrypted size:</strong> ${(result.metadata.encryptedSize / 1024).toFixed(2)} KB<br>
+                    <strong>Overhead:</strong> ${((result.metadata.encryptedSize - result.metadata.originalSize) / 1024).toFixed(2)} KB (salt + IV + GCM tag)`, 
+                    'success'
+                );
+
+                encryptBtn.textContent = '🔐 Encrypt File';
+                encryptBtn.disabled = false;
+            } catch (error) {
+                showStatus(statusDiv, '❌ Encryption failed: ' + error.message, 'error');
+                encryptBtn.textContent = '🔐 Encrypt File';
+                encryptBtn.disabled = false;
+            }
+        }
+
+        async function decryptFile() {
+            const encryptedInput = document.getElementById('encryptedFileInput');
+            const passwordInput = document.getElementById('decryptPassword');
+            const originalNameInput = document.getElementById('originalFileName');
+            const originalTypeInput = document.getElementById('originalFileType');
+            const statusDiv = document.getElementById('decryptStatus');
+            const downloadLink = document.getElementById('downloadDecrypted');
+            const decryptBtn = document.getElementById('decryptBtn');
+
+            if (!encryptedInput.files[0]) {
+                showStatus(statusDiv, 'Please select an encrypted file first.', 'error');
+                return;
+            }
+
+            const password = passwordInput.value;
+            if (!password) {
+                showStatus(statusDiv, 'Please enter the decryption password.', 'error');
+                return;
+            }
+
+            try {
+                decryptBtn.disabled = true;
+                decryptBtn.textContent = '⏳ Decrypting...';
+                showStatus(statusDiv, 'Decrypting file...', 'info');
+
+                const encryptedFile = encryptedInput.files[0];
+                const originalName = originalNameInput.value || 'decrypted-file';
+                const originalType = originalTypeInput.value || 'application/octet-stream';
+
+                const decryptedBlob = await window.zeroKnowledgeDecrypt(
+                    encryptedFile,
+                    password,
+                    originalName,
+                    originalType
+                );
+
+                // Create download link
+                const url = URL.createObjectURL(decryptedBlob);
+                downloadLink.href = url;
+                downloadLink.download = originalName;
+                downloadLink.classList.remove('hidden');
+
+                showStatus(statusDiv, 
+                    `✅ File decrypted successfully!<br>
+                    <strong>File:</strong> ${originalName}<br>
+                    <strong>Size:</strong> ${(decryptedBlob.size / 1024).toFixed(2)} KB`, 
+                    'success'
+                );
+
+                decryptBtn.textContent = '🔓 Decrypt File';
+                decryptBtn.disabled = false;
+            } catch (error) {
+                showStatus(statusDiv, '❌ Decryption failed: ' + error.message, 'error');
+                decryptBtn.textContent = '🔓 Decrypt File';
+                decryptBtn.disabled = false;
+            }
+        }
+
+        function showStatus(element, message, type) {
+            element.innerHTML = message;
+            element.className = 'status ' + type;
+            element.classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
+
