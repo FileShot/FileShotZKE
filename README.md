@@ -1,49 +1,121 @@
-# FileShotZKE
-ZKE method
+# FileShot Zero-Knowledge Encryption (ZKE)
 
-# FileShot Zero-Knowledge Encryption
+Client-side, open-source zero-knowledge encryption used by FileShot.io.
 
-**Open-source zero-knowledge encryption implementation using Web Crypto API**
+This repository contains the browser-based encryption system that powers FileShot’s zero-knowledge upload pipeline. All encryption occurs locally in the user’s browser via the Web Crypto API. FileShot servers never receive passwords, keys, or unencrypted data.
 
-This repository contains the client-side encryption code that powers FileShot.io's zero-knowledge encryption feature. Files are encrypted entirely in your browser before upload, ensuring that even FileShot's servers cannot decrypt your files.
+This ensures files stored and shared through FileShot remain unreadable by FileShot, third parties, attackers, or governments.
 
-What is Zero-Knowledge Encryption?
+---
 
-Zero-knowledge encryption means that **we cannot decrypt your files**, even if we wanted to. The encryption happens entirely in your browser using the Web Crypto API, and we never receive your encryption key or password.
+## What Zero-Knowledge Encryption Means
 
-### Key Features
+Zero-knowledge encryption ensures:
 
-- ✅ **AES-256-GCM encryption** - Industry-standard encryption algorithm
-- ✅ **PBKDF2 key derivation** - 100,000 iterations for password-based key derivation
-- ✅ **Client-side only** - All encryption happens in your browser
-- ✅ **No server access** - We cannot decrypt your files, even with a court order
-- ✅ **Open source** - Review the code yourself
+* Files are encrypted before they leave the browser.
+* Decryption keys never leave the user’s device.
+* FileShot servers store only encrypted blobs.
+* No one, including FileShot, can decrypt user files.
+
+All cryptographic operations are performed client-side using the Web Crypto API.
+
+---
+
+## Full FileShot Feature Set
+
+### Core Privacy Features
+
+* Client-side zero-knowledge encryption.
+* No accounts or identity required.
+* No analytics, tracking, or fingerprinting.
+* Keys and passwords never transmitted.
+* Open-source encryption implementation.
+* Servers store encrypted data only.
+
+### Upload & Sharing Features
+
+* Uploads up to 15GB per file.
+* Secure, shareable links.
+* Expiration settings from 1 hour to 30 days.
+* Optional password protection.
+* Anonymous download information.
+* NVMe-backed high-speed infrastructure.
+
+### Monetization Features
+
+* Optional paid-access downloads.
+* Up to 50% commission per download.
+* Payments integrated without compromising encryption.
+
+### Built-In File Tools
+
+#### PDF Tools
+
+* Edit PDFs.
+* Merge PDFs.
+* Split PDFs.
+* Compress PDFs.
+* Convert PDFs to and from images.
+
+#### Conversion Tools
+
+* Video to MP4.
+* Audio to MP3.
+* Image format conversion (PNG, JPG, WebP, AVIF).
+* Document conversion (PDF ↔ DOCX, TXT → PDF, etc.).
+* Archive conversion (ZIP, TAR, 7Z when supported).
+
+#### Archive Tools
+
+* Create ZIP, TAR, and 7Z archives.
+* Extract ZIP, RAR, TAR, GZ, and 7Z.
+
+#### Compression Tools
+
+* Image compression.
+* Video compression.
+* General file compression.
+
+#### Utility Tools
+
+* File metadata inspection.
+* SHA-256 hash generation.
+* Secure local file deletion.
+
+### Platform-Level Features
+
+* Zero-knowledge encryption pipeline.
+* Secure link signing.
+* Client-side metadata handling.
+* Private, self-hosted infrastructure.
+* Modern high-performance UI.
+* Web Crypto API for all cryptographic operations.
+
+---
 
 ## Quick Start
 
 ### Try the Demo
 
-1. Open `demo.html` in your browser
-2. Select a file and encrypt it
-3. Download the encrypted file
-4. Decrypt it with the same password
+1. Open `demo.html`.
+2. Select a file and encrypt it.
+3. Download the encrypted output.
+4. Decrypt using the same password.
 
-### Use in Your Project
+---
+
+## Using in Your Own Project
 
 ```html
 <script src="zero-knowledge.js"></script>
 <script>
-  // Encrypt a file
   const fileInput = document.getElementById('fileInput');
   const file = fileInput.files[0];
   const password = 'your-secure-password';
-  
+
   const result = await window.zeroKnowledgeEncrypt(file, password);
-  // result.encryptedBlob - encrypted file ready to upload
-  // result.metadata - file metadata (name, size, type)
-  
-  // Decrypt a file
-  const decryptedBlob = await window.zeroKnowledgeDecrypt(
+
+  const decrypted = await window.zeroKnowledgeDecrypt(
     encryptedBlob,
     password,
     originalFileName,
@@ -52,57 +124,60 @@ Zero-knowledge encryption means that **we cannot decrypt your files**, even if w
 </script>
 ```
 
-##  How It Works
+---
 
-1. **Key Generation**: Your browser generates a random salt and derives an encryption key from your password using PBKDF2
-2. **Encryption**: Your file is encrypted using AES-256-GCM before upload
-3. **Upload**: Only the encrypted data is sent to FileShot's servers
-4. **Storage**: We store encrypted blobs that we cannot decrypt
-5. **Download**: Recipients decrypt files in their browser using the password you shared
+## How It Works
 
-##  Security Details
+1. **Key Derivation** – A random salt is generated; a key is derived using PBKDF2 (100,000 iterations, SHA-256).
+2. **Encryption** – AES-256-GCM encrypts the file with a 12-byte IV.
+3. **Upload** – Only the encrypted blob is transmitted.
+4. **Storage** – Servers store encrypted blobs and encrypted metadata only.
+5. **Download & Decryption** – Recipients decrypt files entirely in-browser using the shared password.
 
-- **Algorithm**: AES-256-GCM (Galois/Counter Mode)
-- **Key Derivation**: PBKDF2 with SHA-256
-- **Iterations**: 100,000 (recommended for 2025)
-- **Salt Length**: 16 bytes (128 bits)
-- **IV Length**: 12 bytes (96 bits) for GCM
-- **Key Length**: 256 bits
+---
 
-##  File Structure
+## Security Details
+
+* AES-256-GCM.
+* PBKDF2 (SHA-256, 100,000 iterations).
+* 16-byte salt.
+* 12-byte IV for GCM.
+* 256-bit keys.
+
+---
+
+## File Structure
 
 ```
 fileshot-zke/
-├── zero-knowledge.js    # Main encryption implementation
-├── demo.html            # Interactive demo page
-├── README.md           # This file
-└── LICENSE             # MIT License
+├── zero-knowledge.js
+├── demo.html
+├── README.md
+└── LICENSE
 ```
 
-##  Testing
+---
 
-Open `demo.html` in a modern browser to test the encryption implementation. The demo allows you to:
+## Testing
 
-- Encrypt files with a password
-- Download encrypted files
-- Decrypt files with the correct password
-- Verify that incorrect passwords fail
+* Encrypt and decrypt files.
+* Validate metadata.
+* Verify incorrect passwords fail.
 
-##  API Reference
+---
 
-### `zeroKnowledgeEncrypt(file, password)`
+## API Reference
 
-Encrypts a file in the browser.
+### zeroKnowledgeEncrypt(file, password)
 
-**Parameters:**
-- `file` (File/Blob): The file to encrypt
-- `password` (string): Encryption password
+Encrypts a file client-side.
 
-**Returns:** Promise resolving to:
-```javascript
+Returns:
+
+```js
 {
-  encryptedBlob: Blob,      // Encrypted file data
-  metadata: {                // File metadata (not encrypted)
+  encryptedBlob: Blob,
+  metadata: {
     originalName: string,
     originalSize: number,
     originalType: string,
@@ -111,75 +186,55 @@ Encrypts a file in the browser.
 }
 ```
 
-### `zeroKnowledgeDecrypt(encryptedBlob, password, originalName, originalType)`
+### zeroKnowledgeDecrypt(encryptedBlob, password, originalName, originalType)
 
-Decrypts a file in the browser.
+Decrypts encrypted data client-side.
 
-**Parameters:**
-- `encryptedBlob` (Blob): Encrypted file data
-- `password` (string): Decryption password
-- `originalName` (string): Original filename
-- `originalType` (string): Original MIME type
-
-**Returns:** Promise resolving to a Blob containing the decrypted file.
-
-##  Important Security Notes
-
-1. **Password Strength**: Use a strong, unique password for each file
-2. **Password Sharing**: Share passwords through a secure channel (not via FileShot)
-3. **Password Loss**: If you lose your password, the file cannot be recovered
-4. **Browser Security**: Ensure your browser and system are secure and up-to-date
-5. **HTTPS Only**: Only use this on HTTPS connections in production
-
-##  Verification
-
-This code is used by FileShot.io. You can verify:
-
-1. The code served on FileShot.io matches this repository
-2. Encryption happens client-side (check Network tab in DevTools)
-3. The encryption key never leaves your browser
-
-##  License
-
-MIT License - See [LICENSE](LICENSE) file for details.
-
-##  Contributing
-
-We welcome security reviews and improvements! Please:
-
-1. Fork the repository
-2. Review the code
-3. Submit issues or pull requests
-4. Report security vulnerabilities responsibly
-
-##  Security Policy
-
-If you discover a security vulnerability, please email **fileshot.adm@gmail.como** instead of opening a public issue.
-
-## 📞 Contact
-
-- **Website**: [FileShot.io](https://fileshot.io)
-- **Verification Page**: [Verify Encryption](https://fileshot.io/verify-encryption.html)
-
-## ✅ Browser Support
-
-This implementation uses the Web Crypto API, which is supported in:
-
-- Chrome 37+
-- Firefox 34+
-- Safari 11+
-- Edge 12+
-- Opera 24+
-
-## 🙏 Acknowledgments
-
-Built using the Web Crypto API, which provides secure cryptographic primitives in modern browsers.
+Returns:
+A Blob containing the decrypted file.
 
 ---
 
-**Remember**: This is client-side encryption code. The security of your files depends on:
-- Using a strong password
-- Keeping your password secret
-- Using a secure browser and system
-- Verifying you're on the real FileShot.io domain (check SSL certificate)
+## Important Security Notes
 
+* Use strong, unique passwords.
+* Share passwords securely.
+* Lost passwords cannot be recovered.
+* Keep browsers and systems up to date.
+* Use HTTPS in production.
+
+---
+
+## Verification
+
+Users can verify:
+
+* Client code matches this repository.
+* Encryption runs entirely in the browser.
+* No keys or plaintext leave the client.
+
+Verification page: [https://fileshot.io/verify-encryption.html](https://fileshot.io/verify-encryption.html)
+
+---
+
+## Browser Support
+
+* Chrome 37+
+* Firefox 34+
+* Safari 11+
+* Edge 12+
+* Opera 24+
+
+---
+
+## Security Policy
+
+Report vulnerabilities privately to:
+
+[fileshot.adm@gmail.com](mailto:fileshot.adm@gmail.com)
+
+---
+
+## License
+
+MIT License.
