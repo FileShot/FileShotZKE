@@ -1,95 +1,44 @@
-# FileShot Zero-Knowledge Encryption (ZKE)
+﻿# FileShot Zero-Knowledge Encryption
 
-Client-side, open-source zero-knowledge encryption used by FileShot.io.
+Client-side, open-source zero-knowledge encryption used by [FileShot.io](https://fileshot.io).
 
-This repository contains the browser-based encryption system that powers FileShot’s zero-knowledge upload pipeline. All encryption occurs locally in the user’s browser via the Web Crypto API. FileShot servers never receive passwords, keys, or unencrypted data.
+All encryption happens in the browser via the Web Crypto API. The server receives only ciphertext — it never sees the key, the password, or the plaintext file.
 
-This ensures files stored and shared through FileShot remain unreadable by FileShot, third parties, attackers, or governments.
-
----
-
-## What Zero-Knowledge Encryption Means
-
-Zero-knowledge encryption ensures:
-
-* Files are encrypted before they leave the browser.
-* Decryption keys never leave the user’s device.
-* FileShot servers store only encrypted blobs.
-* No one, including FileShot, can decrypt user files.
-
-All cryptographic operations are performed client-side using the Web Crypto API.
+![FileShot.io — zero-knowledge encrypted file sharing](screenshot-upload.png)
 
 ---
 
-## Full FileShot Feature Set
+## How the Zero-Knowledge Model Works
 
-### Core Privacy Features
+FileShot uses two modes of zero-knowledge encryption, both implemented in this library:
 
-* Client-side zero-knowledge encryption.
-* No accounts or identity required.
-* No analytics, tracking, or fingerprinting.
-* Keys and passwords never transmitted.
-* Open-source encryption implementation.
-* Servers store encrypted data only.
+### URL-Fragment Mode (production default)
 
-### Upload & Sharing Features
+1. A cryptographically random 256-bit key is generated in the browser.
+2. The file is encrypted with AES-256-GCM using that key.
+3. Only the ciphertext is uploaded to the server.
+4. The key is placed in the URL fragment (`#key=...`) of the share link.
+5. The URL fragment is **never transmitted to the server** — browsers do not include fragments in HTTP requests by design.
+6. The recipient decrypts entirely in-browser using the key from the URL.
 
-* Uploads up to 15GB per file.
-* Secure, shareable links.
-* Expiration settings from 1 hour to 30 days.
-* Optional password protection.
-* Anonymous download information.
-* NVMe-backed high-speed infrastructure.
+The server is architecturally incapable of decrypting the file even under compulsion.
 
-### Monetization Features
+### Password Mode
 
-* Optional paid-access downloads.
-* Up to 50% commission per download.
-* Payments integrated without compromising encryption.
+Users may optionally set a password. The key is derived from the password via PBKDF2 (100,000 iterations, SHA-256). The password itself is never transmitted. The recipient enters the password in their browser to decrypt.
 
-### Built-In File Tools
+---
 
-#### PDF Tools
+## Security Details
 
-* Edit PDFs.
-* Merge PDFs.
-* Split PDFs.
-* Compress PDFs.
-* Convert PDFs to and from images.
-
-#### Conversion Tools
-
-* Video to MP4.
-* Audio to MP3.
-* Image format conversion (PNG, JPG, WebP, AVIF).
-* Document conversion (PDF ↔ DOCX, TXT → PDF, etc.).
-* Archive conversion (ZIP, TAR, 7Z when supported).
-
-#### Archive Tools
-
-* Create ZIP, TAR, and 7Z archives.
-* Extract ZIP, RAR, TAR, GZ, and 7Z.
-
-#### Compression Tools
-
-* Image compression.
-* Video compression.
-* General file compression.
-
-#### Utility Tools
-
-* File metadata inspection.
-* SHA-256 hash generation.
-* Secure local file deletion.
-
-### Platform-Level Features
-
-* Zero-knowledge encryption pipeline.
-* Secure link signing.
-* Client-side metadata handling.
-* Private, self-hosted infrastructure.
-* Modern high-performance UI.
-* Web Crypto API for all cryptographic operations.
+| Parameter | Value |
+|-----------|-------|
+| Cipher | AES-256-GCM |
+| Key derivation | PBKDF2, SHA-256, 100,000 iterations |
+| Salt | 16 bytes, random per-file |
+| IV | 12 bytes, random per-encryption |
+| Key size | 256 bits |
+| Crypto API | Web Crypto API (native browser, no dependencies) |
 
 ---
 
@@ -97,52 +46,83 @@ All cryptographic operations are performed client-side using the Web Crypto API.
 
 ### Try the Demo
 
-1. Open `demo.html`.
-2. Select a file and encrypt it.
-3. Download the encrypted output.
-4. Decrypt using the same password.
+1. Open `demo.html` in any modern browser.
+2. Select a file and a password.
+3. Click Encrypt — you get an encrypted blob.
+4. Click Decrypt with the same password — you get the original file back.
 
----
+No server involved. Works fully offline.
 
-## Using in Your Own Project
+### Embed in Your Project
 
 ```html
 <script src="zero-knowledge.js"></script>
 <script>
-  const fileInput = document.getElementById('fileInput');
-  const file = fileInput.files[0];
-  const password = 'your-secure-password';
+const file = document.getElementById('fileInput').files[0];
 
-  const result = await window.zeroKnowledgeEncrypt(file, password);
+// Encrypt
+const { encryptedBlob, metadata } = await window.zeroKnowledgeEncrypt(file, 'strong-password');
 
-  const decrypted = await window.zeroKnowledgeDecrypt(
-    encryptedBlob,
-    password,
-    originalFileName,
-    originalFileType
-  );
+// Decrypt
+const decryptedBlob = await window.zeroKnowledgeDecrypt(
+  encryptedBlob,
+  'strong-password',
+  metadata.originalName,
+  metadata.originalType
+);
 </script>
 ```
 
 ---
 
-## How It Works
+## API Reference
 
-1. **Key Derivation** – A random salt is generated; a key is derived using PBKDF2 (100,000 iterations, SHA-256).
-2. **Encryption** – AES-256-GCM encrypts the file with a 12-byte IV.
-3. **Upload** – Only the encrypted blob is transmitted.
-4. **Storage** – Servers store encrypted blobs and encrypted metadata only.
-5. **Download & Decryption** – Recipients decrypt files entirely in-browser using the shared password.
+### `zeroKnowledgeEncrypt(file, password)`
+
+Encrypts a `File` or `Blob` client-side.
+
+**Returns:**
+```js
+{
+  encryptedBlob: Blob,          // AES-256-GCM ciphertext
+  metadata: {
+    originalName: string,       // Original filename
+    originalSize: number,       // Original size in bytes
+    originalType: string,       // Original MIME type
+    encryptedSize: number       // Encrypted size in bytes
+  }
+}
+```
+
+### `zeroKnowledgeDecrypt(encryptedBlob, password, originalName, originalType)`
+
+Decrypts an encrypted `Blob` client-side.
+
+**Returns:** A `Blob` containing the decrypted file, with the original filename and MIME type.
 
 ---
 
-## Security Details
+## Encryption Pipeline
 
-* AES-256-GCM.
-* PBKDF2 (SHA-256, 100,000 iterations).
-* 16-byte salt.
-* 12-byte IV for GCM.
-* 256-bit keys.
+```
+User selects file
+      |
+      v
+Generate random 16-byte salt
+Generate random 12-byte IV
+      |
+      v
+PBKDF2(password, salt) → 256-bit AES key
+      |
+      v
+AES-256-GCM encrypt(file bytes, key, IV)
+      |
+      v
+Output: [salt][IV][ciphertext][auth tag]
+      |
+      v
+Only ciphertext leaves the browser
+```
 
 ---
 
@@ -150,91 +130,80 @@ All cryptographic operations are performed client-side using the Web Crypto API.
 
 ```
 fileshot-zke/
-├── zero-knowledge.js
-├── demo.html
+├── zero-knowledge.js   # Core encryption/decryption library
+├── demo.html           # Standalone browser demo
 ├── README.md
-└── LICENSE
+└── LICENSE             # MIT
 ```
-
----
-
-## Testing
-
-* Encrypt and decrypt files.
-* Validate metadata.
-* Verify incorrect passwords fail.
-
----
-
-## API Reference
-
-### zeroKnowledgeEncrypt(file, password)
-
-Encrypts a file client-side.
-
-Returns:
-
-```js
-{
-  encryptedBlob: Blob,
-  metadata: {
-    originalName: string,
-    originalSize: number,
-    originalType: string,
-    encryptedSize: number
-  }
-}
-```
-
-### zeroKnowledgeDecrypt(encryptedBlob, password, originalName, originalType)
-
-Decrypts encrypted data client-side.
-
-Returns:
-A Blob containing the decrypted file.
-
----
-
-## Important Security Notes
-
-* Use strong, unique passwords.
-* Share passwords securely.
-* Lost passwords cannot be recovered.
-* Keep browsers and systems up to date.
-* Use HTTPS in production.
-
----
-
-## Verification
-
-Users can verify:
-
-* Client code matches this repository.
-* Encryption runs entirely in the browser.
-* No keys or plaintext leave the client.
-
-Verification page: [https://fileshot.io/verify-encryption.html](https://fileshot.io/verify-encryption.html)
 
 ---
 
 ## Browser Support
 
-* Chrome 37+
-* Firefox 34+
-* Safari 11+
-* Edge 12+
-* Opera 24+
+| Browser | Minimum Version |
+|---------|----------------|
+| Chrome | 37+ |
+| Firefox | 34+ |
+| Safari | 11+ |
+| Edge | 12+ |
+| Opera | 24+ |
+
+All modern browsers support the Web Crypto API. No polyfills needed.
+
+---
+
+## Key Security Properties
+
+- **No server-side keys.** The server stores only ciphertext and encrypted metadata.
+- **No key transmission.** Keys travel only in URL fragments, which are stripped from HTTP requests.
+- **No dependencies.** The library uses only the native browser `crypto.subtle` API.
+- **Authenticated encryption.** AES-GCM includes a MAC — tampered ciphertext is rejected before decryption.
+- **Forward secrecy per file.** Each file gets a unique salt and IV.
+
+---
+
+## Live Implementation
+
+This library powers [FileShot.io](https://fileshot.io) — a zero-knowledge file sharing service.
+
+**Plans:**
+
+| Plan | File Size Limit | Storage | Price |
+|------|----------------|---------|-------|
+| Free | 50 GB per file | Unlimited | $0 |
+| Lite | 100 GB per file | Unlimited | $1/mo |
+| Pro | 250 GB per file | Unlimited | $4/mo |
+| Creator | Unlimited | Unlimited | $9/mo |
+
+You can audit the encryption running in production at: [https://fileshot.io/verify-encryption.html](https://fileshot.io/verify-encryption.html)
+
+---
+
+## Desktop App
+
+FileShot also has an open-source Electron desktop app: [github.com/FileShot/fileshot-desktop](https://github.com/FileShot/fileshot-desktop)
+
+Features tray integration, drag-and-drop uploads, background transfers, and a virtual FileShot Drive.
 
 ---
 
 ## Security Policy
 
-Report vulnerabilities privately to:
+Report vulnerabilities privately: [fileshot.adm@gmail.com](mailto:fileshot.adm@gmail.com)
 
-[fileshot.adm@gmail.com](mailto:fileshot.adm@gmail.com)
+---
+
+## Testing
+
+- Encrypt a file, verify the encrypted blob contains no plaintext.
+- Decrypt with the correct password — verify original bytes match exactly.
+- Decrypt with an incorrect password — verify an error is thrown (GCM authentication failure).
+- Verify the salt and IV are different on every encryption of the same file.
 
 ---
 
 ## License
 
-MIT License.
+MIT — see [LICENSE](LICENSE).
+
+Copyright (c) 2025 FileShot.io
