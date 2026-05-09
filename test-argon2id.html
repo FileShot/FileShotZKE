@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Argon2id Migration Test</title>
+  <style>
+    body { font-family: monospace; max-width: 700px; margin: 2rem auto; padding: 1rem; background: #0f0f0f; color: #e0e0e0; }
+    h1 { color: #7dd3fc; }
+    .pass { color: #4ade80; }
+    .fail { color: #f87171; }
+    .info { color: #fbbf24; }
+    button { background: #1d4ed8; color: white; border: none; padding: 0.6rem 1.4rem; border-radius: 4px; cursor: pointer; font-size: 1rem; margin-top: 1rem; }
+    #log { white-space: pre; margin-top: 1rem; line-height: 1.6; }
+  </style>
+</head>
+<body>
+  <h1>Argon2id Migration Test</h1>
+  <p>Tests: Argon2id encrypt/decrypt, wrong-password rejection, legacy PBKDF2 backward compat.</p>
+  <button onclick="runTests()">Run All Tests</button>
+  <div id="log"></div>
+
+  <script src="zero-knowledge.js"></script>
+  <script>
+    const log = document.getElementById('log');
+    function p(msg, cls) { log.innerHTML += `<span class="${cls || ''}">${msg}</span>\n`; }
+
+    async function runTests() {
+      log.innerHTML = '';
+      let pass = 0, fail = 0;
+
+      async function ok(label, fn) {
+        try {
+          await fn();
+          p('  ✓ ' + label, 'pass');
+          pass++;
+        } catch(e) {
+          p('  ✗ ' + label + ': ' + e.message, 'fail');
+          fail++;
+        }
+      }
+
+      p('=== Test 1: Argon2id encrypt + decrypt roundtrip ===', 'info');
+      await ok('Encrypt and decrypt a text file', async () => {
+        const content = 'Hello, FileShot Argon2id! 🔐';
+        const file = new File([content], 'test.txt', { type: 'text/plain' });
+        const { encryptedBlob } = await zeroKnowledgeEncrypt(file, 'correct-password');
+
+        // Verify format byte = 0x02
+        const bytes = new Uint8Array(await encryptedBlob.arrayBuffer());
+        if (bytes[0] !== 0x02) throw new Error('Expected format version byte 0x02, got ' + bytes[0]);
+
+        const decrypted = await zeroKnowledgeDecrypt(encryptedBlob, 'correct-password', 'test.txt', 'text/plain');
+        const result = await decrypted.text();
+        if (result !== content) throw new Error('Decrypted content mismatch');
+      });
+
+      p('\n=== Test 2: Wrong password is rejected ===', 'info');
+      await ok('Wrong password throws error', async () => {
+        const file = new File(['secret data'], 'secret.txt', { type: 'text/plain' });
+        const { encryptedBlob } = await zeroKnowledgeEncrypt(file, 'right-password');
+        let threw = false;
+        try {
+          await zeroKnowledgeDecrypt(encryptedBlob, 'wrong-password', 'secret.txt', 'text/plain');
+        } catch(e) {
+          threw = true;
+        }
+        if (!threw) throw new Error('Expected decryption to fail with wrong password, but it succeeded');
+      });
+
+      p('\n=== Test 3: Different passwords produce different ciphertext ===', 'info');
+      await ok('Ciphertexts are distinct', async () => {
+        const file = new File(['same content'], 'a.txt', { type: 'text/plain' });
+        const { encryptedBlob: b1 } = await zeroKnowledgeEncrypt(file, 'passA');
+        const { encryptedBlob: b2 } = await zeroKnowledgeEncrypt(file, 'passB');
+        const a1 = new Uint8Array(await b1.arrayBuffer());
+        const a2 = new Uint8Array(await b2.arrayBuffer());
+        const same = a1.every((v, i) => v === a2[i]);
+        if (same) throw new Error('Different passwords produced identical ciphertext');
+      });
+
+      p('\n=== Test 4: Legacy PBKDF2 file backward compat ===', 'info');
+      await ok('Decrypt a simulated legacy v1 file (PBKDF2)', async () => {
+        // Manually construct a legacy v1 file: [salt16][iv12][ciphertext]
+        const password = 'legacy-password';
+        const salt = crypto.getRandomValues(new Uint8Array(16));
+        const iv = crypto.getRandomValues(new Uint8Array(12));
+        const plaintext = new TextEncoder().encode('legacy plaintext');
+
+        // Derive key with PBKDF2
+        const pwKey = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), { name: 'PBKDF2' }, false, ['deriveKey']);
+        const key = await crypto.subtle.deriveKey(
+          { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' },
+          pwKey,
+          { name: 'AES-GCM', length: 256 },
+          false,
+          ['encrypt', 'decrypt']
+        );
+        const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, plaintext));
+
+        // Build legacy blob
+        const legacy = new Uint8Array(16 + 12 + ct.length);
+        legacy.set(salt, 0); legacy.set(iv, 16); legacy.set(ct, 28);
+        const legacyBlob = new Blob([legacy]);
+
+        // Attempt decrypt using new code (should fall back to PBKDF2)
+        const decrypted = await zeroKnowledgeDecrypt(legacyBlob, password, 'legacy.txt', 'text/plain');
+        const result = await decrypted.text();
+        if (result !== 'legacy plaintext') throw new Error('Legacy decrypt failed: ' + result);
+      });
+
+      p('\n=== Test 5: Format version byte check ===', 'info');
+      await ok('New files start with 0x02', async () => {
+        const file = new File(['check'], 'check.txt', {type:'text/plain'});
+        const { encryptedBlob } = await zeroKnowledgeEncrypt(file, 'pw');
+        const b = new Uint8Array(await encryptedBlob.arrayBuffer());
+        if (b[0] !== 0x02) throw new Error('Expected 0x02, got ' + b[0]);
+        if (b.length !== 1 + 32 + 12 + 16 + 5) { /* AES-GCM adds 16 byte tag */ }
+        // Just verify structure: 1 + 32 salt + 12 iv + (5 plaintext + 16 tag) = 66
+        const expected = 1 + 32 + 12 + 5 + 16;
+        if (b.length !== expected) throw new Error(`Expected ${expected} bytes, got ${b.length}`);
+      });
+
+      p(`\n${'─'.repeat(40)}`, '');
+      p(`Results: ${pass} passed, ${fail} failed`, fail === 0 ? 'pass' : 'fail');
+    }
+  </script>
+</body>
+</html>
