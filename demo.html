@@ -266,7 +266,7 @@
                 <h2>ℹ️ How It Works</h2>
                 <ul style="line-height: 1.8; padding-left: 1.5rem;">
                     <li>Files are encrypted <strong>entirely in your browser</strong> using Web Crypto API</li>
-                    <li>Uses <strong>AES-256-GCM</strong> encryption with <strong>PBKDF2</strong> key derivation</li>
+                    <li>Uses <strong>AES-256-GCM</strong> with <strong>Argon2id</strong> (hash-wasm) for new encrypts; older files still decrypt with PBKDF2</li>
                     <li>The encryption password <strong>never leaves your browser</strong></li>
                     <li>Even FileShot's servers <strong>cannot decrypt</strong> your files</li>
                     <li>Each file uses a unique random salt and IV for maximum security</li>
@@ -276,10 +276,11 @@
 
         <div class="footer">
             <p>This is the encryption implementation used by <a href="https://fileshot.io" target="_blank">FileShot.io</a></p>
-            <p>View source code on <a href="https://github.com" target="_blank">GitHub</a></p>
+            <p>View source code on <a href="https://github.com/FileShot/FileShotZKE" target="_blank">GitHub</a></p>
         </div>
     </div>
 
+    <script src="zke-hash-wasm.bundle.js"></script>
     <script src="zero-knowledge.js"></script>
     <script>
         let encryptedBlob = null;

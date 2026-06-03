@@ -41,8 +41,8 @@ Files encrypted before this migration used PBKDF2-SHA256 (100,000 iterations) an
 | Salt | 32 bytes, random per-file (legacy: 16 bytes) |
 | IV | 12 bytes, random per-encryption |
 | Key size | 256 bits |
-| Implementation | Pure JS, inline — no WASM, no external dependencies |
-| Crypto API | Web Crypto API (AES-GCM only; KDF is pure JS) |
+| Implementation | **hash-wasm** Argon2id (`zke-hash-wasm.bundle.js`) + Web Crypto AES-GCM |
+| Crypto API | Web Crypto API (AES-GCM); KDF via hash-wasm (PBKDF2 legacy decrypt in Web Crypto) |
 
 ---
 
@@ -60,6 +60,7 @@ No server involved. Works fully offline.
 ### Embed in Your Project
 
 ```html
+<script src="zke-hash-wasm.bundle.js"></script>
 <script src="zero-knowledge.js"></script>
 <script>
 const file = document.getElementById('fileInput').files[0];
