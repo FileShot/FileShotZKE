@@ -214,6 +214,19 @@ Open `test-argon2id.html` in any modern browser and click **Run All Tests**. The
 No server required — runs fully offline.
 
 ---
+## Contributing
+
+Contributions are welcome and appreciated!
+
+To contribute:
+
+1. Fork the repository.
+2. Create a new branch for your changes.
+3. Make and test your changes locally.
+4. Commit your changes with a clear and descriptive message.
+5. Open a pull request describing your improvements.
+
+Please keep pull requests focused and ensure that any changes are well documented.
 
 ## License
 
